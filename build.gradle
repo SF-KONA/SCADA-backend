@@ -38,7 +38,7 @@ dependencies {
 
 	implementation 'com.google.code.gson:gson:2.10.1'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient용
-
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
 }
 
