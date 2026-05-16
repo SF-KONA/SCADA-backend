@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ai_report_jobs")
-@Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
