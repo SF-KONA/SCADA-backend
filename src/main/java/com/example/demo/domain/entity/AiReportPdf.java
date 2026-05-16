@@ -31,5 +31,6 @@ public class AiReportPdf {
     private LocalDateTime generatedAt;
 
     @Column(name = "download_count", nullable = false)
-    private Integer downloadCount;
+    @Builder.Default
+    private Integer downloadCount = 0;
 }
