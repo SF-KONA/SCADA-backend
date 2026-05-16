@@ -28,13 +28,13 @@ public class ReportController {
 
     // ── 1. POST /api/reports - 리포트 생성 요청 ───────────────────────────────
     // 명세서: 202 Accepted / Request: query_text / Response: job_id, status, requested_at
+    // TODO: JWT 구현 후 복구
     @PostMapping
     public ResponseEntity<ApiResponse<ReportDto.CreateResponse>> createReport(
-            @Valid @RequestBody ReportDto.CreateRequest request,
-            @AuthenticationPrincipal UserDetails user) {
+            @Valid @RequestBody ReportDto.CreateRequest request) {
 
         ReportDto.CreateResponse response =
-            reportJobService.createJob(user.getUsername(), request.getQueryText());
+                reportJobService.createJob("dev_user", request.getQueryText());
 
         // @Async - 바로 반환, 분석은 백그라운드
         reportJobService.processJob(response.getJobId());
@@ -70,12 +70,12 @@ public class ReportController {
 
     // ── 5. GET /api/reports/{job_id}/pdf - PDF 다운로드 ──────────────────────
     // 명세서: Content-Type: application/pdf / download_count +1
+    // TODO: JWT 구현 후 복구
     @GetMapping("/{jobId}/pdf")
     public ResponseEntity<Resource> downloadPdf(
-            @PathVariable String jobId,
-            @AuthenticationPrincipal UserDetails user) {
+            @PathVariable String jobId) {
 
-        String pdfPath = reportJobService.getPdfPath(jobId, user.getUsername());
+        String pdfPath = reportJobService.getPdfPath(jobId, "dev_user");
 
         File pdfFile = new File(pdfPath);
         Resource resource = new FileSystemResource(pdfFile);

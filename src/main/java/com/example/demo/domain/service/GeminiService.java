@@ -88,6 +88,8 @@ public class GeminiService {
         );
 
         try {
+            log.info("Gemini 호출 URL: {}", apiUrl);
+            log.info("Gemini API Key: {}", apiKey.substring(0, 10) + "...");
             Map<?, ?> response = webClient.post()
                 .uri(apiUrl + "?key=" + apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -100,6 +102,10 @@ public class GeminiService {
             return extractText(response);
         } catch (Exception e) {
             log.error("Gemini API 호출 실패: {}", e.getMessage());
+            // 응답 바디 내용 확인
+            if (e instanceof org.springframework.web.reactive.function.client.WebClientResponseException ex) {
+                log.error("Gemini 응답 바디: {}", ex.getResponseBodyAsString());
+            }
             throw new RuntimeException("Gemini 호출 실패: " + e.getMessage());
         }
     }

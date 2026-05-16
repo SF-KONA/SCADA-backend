@@ -2,6 +2,7 @@ package com.example.demo.domain.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.demo.domain.entity.AiReportJob;
+import com.example.demo.domain.enums.ReportJobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -63,8 +64,8 @@ public class ReportWebSocketService {
             log.info("[WS] push: jobId={}, status={}", job.getJobId(), job.getStatus());
 
             // DONE / FAILED 이후엔 구독 해제
-            if (job.getStatus() == ReportReportJobStatus.DONE
-             || job.getStatus() == ReportReportJobStatus.FAILED) {
+            if (job.getStatus() == ReportJobStatus.DONE
+             || job.getStatus() == ReportJobStatus.FAILED) {
                 subscriptions.remove(job.getJobId());
             }
         } catch (IOException e) {

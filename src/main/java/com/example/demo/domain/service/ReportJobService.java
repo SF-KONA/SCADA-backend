@@ -1,12 +1,11 @@
 package com.example.demo.domain.service;
-
+import com.example.demo.domain.enums.ReportJobStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.demo.domain.common.ErrorCode;
 import com.example.demo.domain.common.ReportException;
 import com.example.demo.domain.dto.ReportDto;
 import com.example.demo.domain.dto.ReportQueryParams;
 import com.example.demo.domain.entity.AiReportJob;
-import com.example.demo.domain.enums.ReportJobStatus;
 import com.example.demo.domain.entity.AiReportPdf;
 import com.example.demo.domain.repository.AiReportJobRepository;
 import com.example.demo.domain.repository.AiReportPdfRepository;
@@ -47,7 +46,7 @@ public class ReportJobService {
             .jobId(jobId)
             .userId(userId)
             .queryText(queryText)
-            .status(JobStatus.QUEUED)
+            .status(ReportJobStatus.QUEUED)
             .requestedAt(now)
             .build();
         jobRepo.save(job);
@@ -67,7 +66,7 @@ public class ReportJobService {
 
         try {
             // RUNNING 전환
-            job.setStatus(JobStatus.RUNNING);
+            job.setStatus(ReportJobStatus.RUNNING);
             job.setStartedAt(LocalDateTime.now());
             jobRepo.save(job);
             wsService.push(job);
@@ -87,7 +86,7 @@ public class ReportJobService {
             job.setNarrative(narrative);
             job.setCharts(objectMapper.writeValueAsString(result.charts()));
             job.setFmea(objectMapper.writeValueAsString(result.fmea()));
-            job.setStatus(JobStatus.DONE);
+            job.setStatus(ReportJobStatus.DONE);
             job.setCompletedAt(LocalDateTime.now());
             jobRepo.save(job);
 
@@ -96,7 +95,7 @@ public class ReportJobService {
 
         } catch (Exception e) {
             log.error("[{}] 분석 실패: {}", jobId, e.getMessage());
-            job.setStatus(JobStatus.FAILED);
+            job.setStatus(ReportJobStatus.FAILED);
             job.setErrorMessage(e.getMessage());
             job.setCompletedAt(LocalDateTime.now());
             jobRepo.save(job);
@@ -122,7 +121,7 @@ public class ReportJobService {
         // charts, fmea JSON 파싱 (DONE일 때만)
         List<ReportDto.ChartData> charts = null;
         List<ReportDto.FmeaEntry> fmea   = null;
-        if (job.getStatus() == JobStatus.DONE) {
+        if (job.getStatus() == ReportJobStatus.DONE) {
             try {
                 if (job.getCharts() != null) {
                     charts = objectMapper.readValue(job.getCharts(),
@@ -162,7 +161,7 @@ public class ReportJobService {
 
         Page<AiReportJob> pageResult;
         if (status != null && !status.isBlank()) {
-            JobStatus jobStatus = JobStatus.valueOf(status);
+            ReportJobStatus jobStatus = ReportJobStatus.valueOf(status);
             pageResult = jobRepo.findByStatusOrderByRequestedAtDesc(jobStatus, pageable);
         } else {
             pageResult = jobRepo.findAllByOrderByRequestedAtDesc(pageable);
@@ -194,7 +193,7 @@ public class ReportJobService {
         AiReportJob job = jobRepo.findById(jobId)
             .orElseThrow(() -> new ReportException(ErrorCode.REPORT_NOT_FOUND));
 
-        if (job.getStatus() != JobStatus.DONE) {
+        if (job.getStatus() != ReportJobStatus.DONE) {
             throw new ReportException(ErrorCode.REPORT_NOT_DONE);
         }
 
