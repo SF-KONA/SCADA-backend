@@ -13,7 +13,9 @@ public enum ErrorCode {
     PDF_NOT_FOUND       (HttpStatus.NOT_FOUND,              "PDF_NOT_FOUND",         "PDF 없음"),
     REPORT_NOT_DONE     (HttpStatus.CONFLICT,               "REPORT_NOT_DONE",       "완료되지 않은 리포트"),
     VALIDATION_ERROR    (HttpStatus.UNPROCESSABLE_ENTITY,   "VALIDATION_ERROR",      "입력값 유효성 오류"),
-    INTERNAL_ERROR      (HttpStatus.INTERNAL_SERVER_ERROR,  "INTERNAL_SERVER_ERROR", "서버 내부 오류");
+    INTERNAL_ERROR      (HttpStatus.INTERNAL_SERVER_ERROR,  "INTERNAL_SERVER_ERROR", "서버 내부 오류"),
+    PROCESS_NOT_FOUND  (HttpStatus.NOT_FOUND,   "PROCESS_NOT_FOUND",   "해당 공정을 찾을 수 없습니다."),
+    NOT_PARTNER_PROCESS(HttpStatus.BAD_REQUEST,  "NOT_PARTNER_PROCESS", "해당 공정이 협력사 공정이 아닙니다.");
 
     private final HttpStatus httpStatus;
     private final String     code;
