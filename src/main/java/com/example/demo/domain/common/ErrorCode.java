@@ -21,7 +21,10 @@ public enum ErrorCode {
     PARAMETER_NOT_FOUND (HttpStatus.NOT_FOUND,  "PARAMETER_NOT_FOUND",       "해당 파라미터를 찾을 수 없습니다."),
     NOT_CONTROLLABLE    (HttpStatus.FORBIDDEN,  "NOT_CONTROLLABLE",          "제어 불가 파라미터입니다."),
     INVALID_STATUS_TRANSITION(HttpStatus.CONFLICT, "INVALID_STATUS_TRANSITION", "허용되지 않는 상태 전환입니다."),
-    ALARM_NOT_FOUND(HttpStatus.NOT_FOUND, "ALARM_NOT_FOUND", "해당 알람을 찾을 수 없습니다.");
+    ALARM_NOT_FOUND(HttpStatus.NOT_FOUND, "ALARM_NOT_FOUND", "해당 알람을 찾을 수 없습니다."),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다."),
+    DUPLICATE_USER_ID(HttpStatus.CONFLICT, "DUPLICATE_USER_ID", "이미 사용 중인 아이디입니다."),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "DUPLICATE_EMAIL", "이미 사용 중인 이메일입니다.");
 
     private final HttpStatus httpStatus;
     private final String     code;
