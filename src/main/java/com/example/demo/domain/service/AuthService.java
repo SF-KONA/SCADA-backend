@@ -46,9 +46,18 @@ public class AuthService {
                         "userId 없음 또는 비밀번호 불일치"));
 
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
-
             throw new ReportException(ErrorCode.UNAUTHORIZED, "userId 없음 또는 비밀번호 불일치");
         }
+
+        if (user.getStatus() != null) {
+            switch (user.getStatus()) {
+                case LOCKED   -> throw new ReportException(ErrorCode.FORBIDDEN, "잠금 처리된 계정입니다.");
+                case INACTIVE -> throw new ReportException(ErrorCode.FORBIDDEN, "비활성화된 계정입니다.");
+                default -> {}
+            }
+        }
+
+        user.recordLogin();
 
         String accessToken  = jwtUtil.generateAccessToken(userId, user.getRole().name());
         String refreshToken = jwtUtil.generateRefreshToken(userId);

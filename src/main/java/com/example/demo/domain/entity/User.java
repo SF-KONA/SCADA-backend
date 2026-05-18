@@ -1,6 +1,7 @@
 package com.example.demo.domain.entity;
 
 import com.example.demo.domain.enums.UserRole;
+import com.example.demo.domain.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -32,7 +33,15 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private UserRole role = UserRole.WORKER; // WORKER, ADMIN, LINE_MGR
+    private UserRole role = UserRole.WORKER;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
+
+    @Column(name = "factory_code", length = 16)
+    private String factoryCode;
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
@@ -44,4 +53,23 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public void updateInfo(String name, String email, String factoryCode, UserRole role) {
+        this.name = name;
+        this.email = email;
+        this.factoryCode = factoryCode;
+        this.role = role;
+    }
+
+    public void updateStatus(UserStatus status) {
+        this.status = status;
+    }
+
+    public void updatePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public void recordLogin() {
+        this.lastLoginAt = LocalDateTime.now();
+    }
 }
