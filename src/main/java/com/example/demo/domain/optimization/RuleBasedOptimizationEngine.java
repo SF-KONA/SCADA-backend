@@ -1,4 +1,4 @@
-package com.example.demo.domain.strategy.optimization;
+package com.example.demo.domain.optimization;
 
 import com.example.demo.domain.entity.EquipmentParameter;
 import org.springframework.stereotype.Component;
