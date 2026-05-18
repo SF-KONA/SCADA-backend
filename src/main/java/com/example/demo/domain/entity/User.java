@@ -20,7 +20,7 @@ public class User {
     @Column(name = "user_id", length = 16)
     private String userId;  // 영문+숫자 4~16자, 등록 후 변경 불가
 
-    @Column(name = "password_hash", nullable = false, length = 60)
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
     @Column(nullable = false, length = 64)

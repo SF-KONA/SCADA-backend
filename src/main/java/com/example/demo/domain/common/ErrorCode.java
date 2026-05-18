@@ -20,7 +20,8 @@ public enum ErrorCode {
     SUGGESTION_NOT_FOUND(HttpStatus.NOT_FOUND,  "SUGGESTION_NOT_FOUND",      "해당 AI 제안을 찾을 수 없습니다."),
     PARAMETER_NOT_FOUND (HttpStatus.NOT_FOUND,  "PARAMETER_NOT_FOUND",       "해당 파라미터를 찾을 수 없습니다."),
     NOT_CONTROLLABLE    (HttpStatus.FORBIDDEN,  "NOT_CONTROLLABLE",          "제어 불가 파라미터입니다."),
-    INVALID_STATUS_TRANSITION(HttpStatus.CONFLICT, "INVALID_STATUS_TRANSITION", "허용되지 않는 상태 전환입니다.");
+    INVALID_STATUS_TRANSITION(HttpStatus.CONFLICT, "INVALID_STATUS_TRANSITION", "허용되지 않는 상태 전환입니다."),
+    ALARM_NOT_FOUND(HttpStatus.NOT_FOUND, "ALARM_NOT_FOUND", "해당 알람을 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String     code;
