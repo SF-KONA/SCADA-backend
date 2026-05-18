@@ -17,8 +17,8 @@ import com.example.demo.domain.repository.EquipmentParameterRepository;
 import com.example.demo.domain.repository.EquipmentRepository;
 import com.example.demo.domain.repository.OeeMetricRepository;
 import com.example.demo.domain.repository.OptimizationActionRepository;
-import com.example.demo.domain.strategy.optimization.OptimizationEngine;
-import com.example.demo.domain.strategy.optimization.OptimizationProposal;
+import com.example.demo.domain.optimization.OptimizationEngine;
+import com.example.demo.domain.optimization.OptimizationProposal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;

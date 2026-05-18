@@ -1,4 +1,4 @@
-package com.example.demo.domain.strategy.optimization;
+package com.example.demo.domain.optimization;
 
 /**
  * 최적화 엔진이 단일 파라미터에 대해 산출한 제안값.
