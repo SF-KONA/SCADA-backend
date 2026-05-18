@@ -103,6 +103,7 @@ public class SuggestionDto {
         private String unit;
         private Double normalMin;
         private Double normalMax;
+        private Double currentValue;   // 최신 측정값 (없으면 null)
         private String dataType;
         private String paramCategory;
     }

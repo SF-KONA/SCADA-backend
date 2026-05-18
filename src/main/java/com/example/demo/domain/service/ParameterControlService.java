@@ -32,16 +32,22 @@ public class ParameterControlService {
 
         List<SuggestionDto.ControllableItem> items = parameterRepo.findByEquipmentId(equipmentId).stream()
                 .filter(p -> Boolean.TRUE.equals(p.getIsControllable()))
-                .map(p -> SuggestionDto.ControllableItem.builder()
-                        .paramId(p.getParamId())
-                        .tagCode(p.getTagCode())
-                        .tagName(p.getTagName())
-                        .unit(p.getUnit())
-                        .normalMin(p.getNormalMin())
-                        .normalMax(p.getNormalMax())
-                        .dataType(p.getDataType() != null ? p.getDataType().name() : null)
-                        .paramCategory(p.getParamCategory() != null ? p.getParamCategory().name() : null)
-                        .build())
+                .map(p -> {
+                    Double currentValue = measurementRepo.findLatestByParamId(p.getParamId())
+                            .map(EquipmentMeasurement::getMeasuredValue)
+                            .orElse(null);
+                    return SuggestionDto.ControllableItem.builder()
+                            .paramId(p.getParamId())
+                            .tagCode(p.getTagCode())
+                            .tagName(p.getTagName())
+                            .unit(p.getUnit())
+                            .normalMin(p.getNormalMin())
+                            .normalMax(p.getNormalMax())
+                            .currentValue(currentValue)
+                            .dataType(p.getDataType() != null ? p.getDataType().name() : null)
+                            .paramCategory(p.getParamCategory() != null ? p.getParamCategory().name() : null)
+                            .build();
+                })
                 .toList();
 
         return SuggestionDto.ControllableListResponse.builder()
