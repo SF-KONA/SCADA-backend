@@ -87,6 +87,19 @@ public class SuggestionDto {
         private LocalDateTime actedAt;
     }
 
+    // ─── 최적화 적용/거부 이력 ───────────────────────
+    @Getter @Builder
+    public static class HistoryItem {
+        private Long actionId;
+        private String equipmentId;
+        private String parameterTag;
+        private String actionType;
+        private Double beforeValue;
+        private Double afterValue;
+        private String comment;
+        private LocalDateTime actedAt;
+    }
+
     // ─── 5.5 제어 가능 파라미터 목록 ─────────────────────
     @Getter @Builder
     public static class ControllableListResponse {
