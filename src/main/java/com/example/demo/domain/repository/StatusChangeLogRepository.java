@@ -15,4 +15,6 @@ public interface StatusChangeLogRepository extends JpaRepository<StatusChangeLog
     Optional<StatusChangeLog> findLatestByEquipmentId(@Param("equipmentId") String equipmentId);
 
     List<StatusChangeLog> findByEquipmentId(String equipmentId);
+
+    List<StatusChangeLog> findByChangedAtAfter(java.time.LocalDateTime since);
 }

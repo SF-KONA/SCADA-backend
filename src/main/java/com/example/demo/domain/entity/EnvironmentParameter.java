@@ -1,5 +1,6 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.domain.converter.DataTypeConverter;
 import com.example.demo.domain.enums.DataType;
 import com.example.demo.domain.enums.EnvironmentParamCategory;
 import jakarta.persistence.*;
@@ -42,7 +43,7 @@ public class EnvironmentParameter {
     @Column(name = "collection_period", length = 8)
     private String collectionPeriod;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = DataTypeConverter.class)
     @Column(name = "data_type")
     private DataType dataType;
 

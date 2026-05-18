@@ -8,6 +8,7 @@ import com.example.demo.domain.entity.Alarm;
 import com.example.demo.domain.entity.EquipmentParameter;
 import com.example.demo.domain.entity.Equipment;
 import com.example.demo.domain.enums.AlarmStatus;
+import com.example.demo.domain.enums.AlarmSourceType;
 import com.example.demo.domain.repository.AlarmRepository;
 import com.example.demo.domain.repository.EquipmentParameterRepository;
 import com.example.demo.domain.repository.EquipmentRepository;
@@ -15,13 +16,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -29,10 +35,13 @@ import java.util.Optional;
 public class AlarmService {
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    private static final DateTimeFormatter FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssxxx");
 
     private final AlarmRepository alarmRepository;
     private final EquipmentParameterRepository equipmentParamRepo;
     private final EquipmentRepository equipmentRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // ─────────────────────────────────────────────
     // 2.1 알람 목록 조회
@@ -115,12 +124,47 @@ public class AlarmService {
 
         alarmRepository.save(updated);
 
+        // ALARM_ACK 이벤트 broadcast
+        broadcastAlarmAck(alarm, userId);
+
         return AlarmDto.AckResponse.builder()
                 .alarmId(alarm.getAlarmId())
                 .status(AlarmStatus.ACK)
                 .ackUserId(userId)
                 .ackAt(toKst(now))
                 .build();
+    }
+
+    private void broadcastAlarmAck(Alarm alarm, String userId) {
+        if (alarm.getSourceType() != AlarmSourceType.EQP) return;
+
+        String equipmentId = null;
+        String equipmentName = null;
+        if (alarm.getEquipmentParamId() != null) {
+            Optional<EquipmentParameter> ep = equipmentParamRepo.findById(alarm.getEquipmentParamId());
+            if (ep.isPresent()) {
+                equipmentId = ep.get().getEquipmentId();
+                equipmentName = equipmentRepository.findById(equipmentId)
+                        .map(Equipment::getEquipmentName).orElse(null);
+            }
+        }
+
+        Map<String, Object> alarmMap = new LinkedHashMap<>();
+        alarmMap.put("alarmId", alarm.getAlarmId());
+        alarmMap.put("sourceType", alarm.getSourceType().name());
+        alarmMap.put("message", alarm.getMessage());
+        alarmMap.put("severity", alarm.getSeverity().name());
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("type", "ALARM_ACK");
+        payload.put("equipmentId", equipmentId);
+        payload.put("equipmentName", equipmentName);
+        payload.put("status", null);
+        payload.put("alarm", alarmMap);
+        payload.put("ackedBy", userId);
+        payload.put("timestamp", ZonedDateTime.now(KST).format(FORMATTER));
+
+        messagingTemplate.convertAndSend("/topic/dashboard", payload);
     }
 
     // ─────────────────────────────────────────────
