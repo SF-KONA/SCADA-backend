@@ -254,6 +254,27 @@ public class SuggestionService {
         return created;
     }
 
+    // ─── 최적화 적용/거부 이력 ───────────────────────
+    @Transactional(readOnly = true)
+    public List<SuggestionDto.HistoryItem> getHistory(String equipmentId, int size) {
+        if (equipmentId == null || equipmentId.isBlank()) {
+            throw new ReportException(ErrorCode.BAD_REQUEST);
+        }
+        PageRequest pageable = PageRequest.of(0, Math.max(1, Math.min(size, 100)));
+        return actionRepo.findByEquipmentIdOrderByActedAtDesc(equipmentId, pageable).stream()
+                .map(a -> SuggestionDto.HistoryItem.builder()
+                        .actionId(a.getActionId())
+                        .equipmentId(a.getEquipmentId())
+                        .parameterTag(a.getParameterTag())
+                        .actionType(a.getActionType().name())
+                        .beforeValue(a.getBeforeValue())
+                        .afterValue(a.getAfterValue())
+                        .comment(a.getComment())
+                        .actedAt(a.getActedAt())
+                        .build())
+                .toList();
+    }
+
     /** 전체 설비를 순회하며 제안 생성. 스케줄러 / 수동 일괄 트리거가 호출. */
     @Transactional
     public int generateForAll() {

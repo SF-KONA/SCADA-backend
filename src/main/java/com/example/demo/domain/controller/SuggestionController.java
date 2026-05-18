@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 public class SuggestionController {
@@ -52,5 +54,14 @@ public class SuggestionController {
         String comment = request != null ? request.getComment() : null;
         return ResponseEntity.ok(ApiResponse.ok(
                 suggestionService.reject(suggestionId, userId, comment)));
+    }
+
+    // 최적화 적용/거부 이력 조회 (설비별, 최신순)
+    @GetMapping("/api/optimization/history")
+    public ResponseEntity<ApiResponse<List<SuggestionDto.HistoryItem>>> history(
+            @RequestParam String equipmentId,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                suggestionService.getHistory(equipmentId, size)));
     }
 }
