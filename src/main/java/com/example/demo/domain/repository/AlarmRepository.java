@@ -15,7 +15,7 @@ import java.util.List;
 
 public interface AlarmRepository extends JpaRepository<Alarm, Long> {
 
-
+    // ── 팀원 기존 코드 (메서드명 그대로 유지) ──────────────────
 
     @Query("""
         SELECT a FROM Alarm a
@@ -43,7 +43,7 @@ public interface AlarmRepository extends JpaRepository<Alarm, Long> {
      * ENV 알람: EnvironmentParameter에 stepNo/zoneCode 없으므로 sourceType=ENV 단독 필터만 지원
      *           (stepNo 필터 시 ENV 알람은 자동 제외됨)
      */
-    @Query("""
+    @Query(value = """
             SELECT a FROM Alarm a
             LEFT JOIN EquipmentParameter ep ON a.equipmentParamId = ep.paramId
             LEFT JOIN Equipment eq ON ep.equipmentId = eq.equipmentId
