@@ -62,9 +62,10 @@ public class SuggestionService {
         // 표시용 메타데이터(equipmentName, tagName, unit) 일괄 조회
         Map<String, Equipment> equipmentMap = lookupEquipments(result.getContent());
         Map<ParamKey, EquipmentParameter> paramMap = lookupParameters(result.getContent());
+        Map<String, Double> currentQualityMap = lookupCurrentQuality(result.getContent());
 
         List<SuggestionDto.ListItem> items = result.getContent().stream()
-                .map(s -> toListItem(s, equipmentMap, paramMap))
+                .map(s -> toListItem(s, equipmentMap, paramMap, currentQualityMap))
                 .toList();
 
         return SuggestionDto.ListResponse.builder()
@@ -87,6 +88,13 @@ public class SuggestionService {
                 .filter(p -> p.getTagCode().equals(s.getParameterTag()))
                 .findFirst().orElse(null);
 
+        // 품질률 절대값 계산 (oee_metrics.quality 는 0~1 → ×100)
+        Double currentQuality = oeeMetricRepo.findLatestByEquipmentId(s.getEquipmentId())
+                .map(OeeMetric::getQuality)
+                .map(q -> q * 100.0)
+                .orElse(null);
+        Double predictedQualityAbs = toPredictedQualityAbsolute(currentQuality, s.getPredictedQuality());
+
         return SuggestionDto.DetailResponse.builder()
                 .suggestionId(s.getSuggestionId())
                 .equipmentId(s.getEquipmentId())
@@ -104,7 +112,9 @@ public class SuggestionService {
                 .predictedOee(s.getPredictedOee())
                 .predictedAvailability(s.getPredictedAvailability())
                 .predictedPerformance(s.getPredictedPerformance())
-                .predictedQuality(s.getPredictedQuality())
+                .currentQuality(currentQuality)
+                .predictedQuality(predictedQualityAbs)
+                .qualityImprovement(s.getPredictedQuality())
                 .contributionScore(s.getContributionScore())
                 .status(s.getStatus().name())
                 .validUntil(s.getValidUntil())
@@ -195,8 +205,12 @@ public class SuggestionService {
                 .toList();
 
         // 2) 현재 OEE
+        //    oee_metrics 는 0~1 비율로 저장되어 있으나, RuleBasedOptimizationEngine 은
+        //    %(0~100) 스케일을 가정(DEFAULT_CURRENT_OEE=70.0)하므로 ×100 변환 후 전달.
+        //    그래야 ai_suggestions.current_oee / predicted_oee 도 % 단위로 일관되게 저장됨.
         Double currentOee = oeeMetricRepo.findLatestByEquipmentId(equipmentId)
                 .map(OeeMetric::getOee)
+                .map(v -> v * 100.0)
                 .orElse(null);
 
         // 3) 엔진 호출
@@ -326,6 +340,34 @@ public class SuggestionService {
                 .collect(Collectors.toMap(Equipment::getEquipmentId, Function.identity()));
     }
 
+    /**
+     * equipmentId → 최신 currentQuality(%, 0~100).
+     * oee_metrics.quality 는 0~1 비율이므로 ×100 해서 절대 % 로 변환.
+     */
+    private Map<String, Double> lookupCurrentQuality(List<AiSuggestion> items) {
+        List<String> ids = items.stream().map(AiSuggestion::getEquipmentId).distinct().toList();
+        Map<String, Double> map = new java.util.HashMap<>();
+        for (String eqId : ids) {
+            oeeMetricRepo.findLatestByEquipmentId(eqId)
+                    .map(OeeMetric::getQuality)
+                    .map(q -> q * 100.0)
+                    .ifPresent(q -> map.put(eqId, q));
+        }
+        return map;
+    }
+
+    /**
+     * entity.predictedQuality(%p delta) + currentQuality(%) → 예측 절대값(%).
+     * 둘 중 하나라도 null 이면 null 반환.
+     */
+    private static Double toPredictedQualityAbsolute(Double currentQualityAbs, Double deltaPp) {
+        if (currentQualityAbs == null || deltaPp == null) return null;
+        double abs = currentQualityAbs + deltaPp;
+        if (abs < 0.0) abs = 0.0;
+        if (abs > 100.0) abs = 100.0;
+        return Math.round(abs * 10.0) / 10.0;
+    }
+
     private record ParamKey(String equipmentId, String tagCode) {}
 
     private Map<ParamKey, EquipmentParameter> lookupParameters(List<AiSuggestion> items) {
@@ -342,9 +384,12 @@ public class SuggestionService {
 
     private SuggestionDto.ListItem toListItem(AiSuggestion s,
                                               Map<String, Equipment> equipmentMap,
-                                              Map<ParamKey, EquipmentParameter> paramMap) {
+                                              Map<ParamKey, EquipmentParameter> paramMap,
+                                              Map<String, Double> currentQualityMap) {
         Equipment eq = equipmentMap.get(s.getEquipmentId());
         EquipmentParameter param = paramMap.get(new ParamKey(s.getEquipmentId(), s.getParameterTag()));
+        Double currentQuality = currentQualityMap.get(s.getEquipmentId());
+        Double predictedQualityAbs = toPredictedQualityAbsolute(currentQuality, s.getPredictedQuality());
         return SuggestionDto.ListItem.builder()
                 .suggestionId(s.getSuggestionId())
                 .equipmentId(s.getEquipmentId())
@@ -360,7 +405,9 @@ public class SuggestionService {
                 .predictedOee(s.getPredictedOee())
                 .predictedAvailability(s.getPredictedAvailability())
                 .predictedPerformance(s.getPredictedPerformance())
-                .predictedQuality(s.getPredictedQuality())
+                .currentQuality(currentQuality)
+                .predictedQuality(predictedQualityAbs)
+                .qualityImprovement(s.getPredictedQuality())
                 .contributionScore(s.getContributionScore())
                 .status(s.getStatus().name())
                 .validUntil(s.getValidUntil())

@@ -34,7 +34,12 @@ public class SuggestionDto {
         private Double predictedOee;
         private Double predictedAvailability;
         private Double predictedPerformance;
-        private Double predictedQuality;
+        // ── 품질률 (절대값, 0~100) ───────────────────────────────
+        // DB 컬럼(predicted_quality)은 %p delta로 저장되지만, FE OeeForecastCard 가
+        // "현재 → 예측" 화살표 표시를 위해 절대값 두 개를 요구하므로 응답 단계에서 변환.
+        private Double currentQuality;
+        private Double predictedQuality;           // = currentQuality + delta(엔티티값)
+        private Double qualityImprovement;         // = entity.predictedQuality (%p)
         private Double contributionScore;
         private String status;
         private LocalDateTime validUntil;
@@ -60,7 +65,10 @@ public class SuggestionDto {
         private Double predictedOee;
         private Double predictedAvailability;
         private Double predictedPerformance;
+        // ── 품질률 (절대값, 0~100) — ListItem 주석 참고 ───────────
+        private Double currentQuality;
         private Double predictedQuality;
+        private Double qualityImprovement;
         private Double contributionScore;
         private String status;
         private LocalDateTime validUntil;
