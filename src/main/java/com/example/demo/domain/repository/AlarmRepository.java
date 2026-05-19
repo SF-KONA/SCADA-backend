@@ -21,7 +21,7 @@ public interface AlarmRepository extends JpaRepository<Alarm, Long> {
         SELECT a FROM Alarm a
         JOIN EquipmentParameter ep ON ep.paramId = a.equipmentParamId
         WHERE ep.equipmentId = :equipmentId
-        AND a.status IN ('NEW', 'ACK', 'IN_PROGRESS')
+        AND a.status IN ('NEW', 'IN_PROGRESS')
         ORDER BY a.occurredAt DESC
     """)
     List<Alarm> findActiveAlarmsByEquipmentId(@Param("equipmentId") String equipmentId);
