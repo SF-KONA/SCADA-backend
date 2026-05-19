@@ -8,6 +8,7 @@ import com.example.demo.domain.entity.Alarm;
 import com.example.demo.domain.entity.EquipmentParameter;
 import com.example.demo.domain.entity.Equipment;
 import com.example.demo.domain.enums.AlarmStatus;
+import com.example.demo.domain.enums.AlarmSeverity;
 import com.example.demo.domain.enums.AlarmSourceType;
 import com.example.demo.domain.repository.AlarmRepository;
 import com.example.demo.domain.repository.EquipmentParameterRepository;
@@ -68,12 +69,20 @@ public class AlarmService {
                 .map(this::toListItem)
                 .toList();
 
+        // ✅ 추가 — 필터 무관한 전체 현황 카운트
+        long totalErr  = alarmRepository.countBySeverity(AlarmSeverity.ERR);
+        long totalWarn = alarmRepository.countBySeverity(AlarmSeverity.WARN);
+        long totalInfo = alarmRepository.countBySeverity(AlarmSeverity.INFO);
+
         return AlarmDto.PageResponse.builder()
                 .total(page.getTotalElements())
                 .page(params.getPage())
                 .size(params.getSize())
                 .totalPages(page.getTotalPages())
                 .items(items)
+                .totalErr(totalErr)
+                .totalWarn(totalWarn)
+                .totalInfo(totalInfo)
                 .build();
     }
 
