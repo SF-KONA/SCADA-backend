@@ -113,4 +113,11 @@ public class EquipmentDto {
         private String noteText;
         private LocalDateTime createdAt;
     }
+
+    // ─── 4.6 관리자 의견 목록 조회 (추가) ────────
+    @Getter @Builder
+    public static class NoteListResponse {
+        private String equipmentId;
+        private List<NoteResponse> items;
+    }
 }
