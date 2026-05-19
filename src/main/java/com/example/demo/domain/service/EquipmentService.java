@@ -32,19 +32,15 @@ public class EquipmentService {
     // ─── 4.1 공정별 설비 목록 ──────────────────
     @Transactional(readOnly = true)
     public EquipmentDto.EquipmentListResponse getEquipmentList(String stepNo) {
-
         ProcessEntity process = processRepository.findById(stepNo)
                 .orElseThrow(() -> new ReportException(ErrorCode.PROCESS_NOT_FOUND));
-
         List<Equipment> equipments = equipmentRepository.findByStepNo(stepNo);
-
         List<EquipmentDto.EquipmentItem> items = equipments.stream()
                 .map(eq -> {
                     int currentStatus = statusChangeLogRepository
                             .findLatestByEquipmentId(eq.getEquipmentId())
                             .map(s -> (int) s.getNewStatus())
                             .orElse(0);
-
                     return EquipmentDto.EquipmentItem.builder()
                             .equipmentId(eq.getEquipmentId())
                             .equipmentName(eq.getEquipmentName())
@@ -55,7 +51,6 @@ public class EquipmentService {
                             .build();
                 })
                 .toList();
-
         return EquipmentDto.EquipmentListResponse.builder()
                 .stepNo(process.getStepNo())
                 .processName(process.getProcessName())
@@ -66,34 +61,25 @@ public class EquipmentService {
     // ─── 4.2 설비 파라미터·측정값 ──────────────
     @Transactional(readOnly = true)
     public EquipmentDto.ParameterListResponse getParameters(String equipmentId, String period) {
-
         Equipment equipment = equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new ReportException(ErrorCode.EQUIPMENT_NOT_FOUND));
-
         int currentStatus = statusChangeLogRepository
                 .findLatestByEquipmentId(equipmentId)
                 .map(s -> (int) s.getNewStatus())
                 .orElse(0);
-
         LocalDateTime from = switch (period != null ? period : "1h") {
             case "24h" -> LocalDateTime.now().minusHours(24);
             case "7d"  -> LocalDateTime.now().minusDays(7);
             default    -> LocalDateTime.now().minusHours(1);
         };
-
         List<EquipmentParameter> params = equipmentParameterRepository.findByEquipmentId(equipmentId);
-
         String overallStatus = "NORMAL";
-
         List<EquipmentDto.ParameterItem> paramItems = new ArrayList<>();
         for (EquipmentParameter param : params) {
-
             EquipmentMeasurement latest = equipmentMeasurementRepository
                     .findLatestByParamId(param.getParamId()).orElse(null);
-
             Double latestValue = latest != null ? latest.getMeasuredValue() : null;
             LocalDateTime latestAt = latest != null ? latest.getMeasuredAt() : null;
-
             String paramStatus = "NORMAL";
             if (latestValue != null && param.getNormalMin() != null && param.getNormalMax() != null) {
                 double range = param.getNormalMax() - param.getNormalMin();
@@ -104,10 +90,8 @@ public class EquipmentService {
                     paramStatus = "WARNING";
                 }
             }
-
             if ("CRITICAL".equals(paramStatus)) overallStatus = "CRITICAL";
             else if ("WARNING".equals(paramStatus) && !"CRITICAL".equals(overallStatus)) overallStatus = "WARNING";
-
             List<EquipmentDto.MeasurementItem> history = equipmentMeasurementRepository
                     .findByParamIdAndMeasuredAtAfterOrderByMeasuredAtAsc(param.getParamId(), from)
                     .stream()
@@ -116,7 +100,6 @@ public class EquipmentService {
                             .measuredAt(m.getMeasuredAt())
                             .build())
                     .toList();
-
             paramItems.add(EquipmentDto.ParameterItem.builder()
                     .paramId(param.getParamId())
                     .tagCode(param.getTagCode())
@@ -130,7 +113,6 @@ public class EquipmentService {
                     .history(history)
                     .build());
         }
-
         return EquipmentDto.ParameterListResponse.builder()
                 .equipmentId(equipment.getEquipmentId())
                 .equipmentName(equipment.getEquipmentName())
@@ -145,18 +127,14 @@ public class EquipmentService {
     // ─── 4.3 설비 알람 ────────────────────────
     @Transactional(readOnly = true)
     public EquipmentDto.AlarmListResponse getAlarms(String equipmentId, String status) {
-
         equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new ReportException(ErrorCode.EQUIPMENT_NOT_FOUND));
-
         List<Alarm> alarms = "all".equals(status)
                 ? alarmRepository.findAllAlarmsByEquipmentId(equipmentId)
                 : alarmRepository.findActiveAlarmsByEquipmentId(equipmentId);
-
         List<EquipmentParameter> params = equipmentParameterRepository.findByEquipmentId(equipmentId);
         Map<Long, String> paramTagMap = params.stream()
                 .collect(Collectors.toMap(EquipmentParameter::getParamId, EquipmentParameter::getTagName));
-
         List<EquipmentDto.AlarmItem> items = alarms.stream()
                 .map(a -> EquipmentDto.AlarmItem.builder()
                         .alarmId(a.getAlarmId())
@@ -170,7 +148,6 @@ public class EquipmentService {
                         .occurredAt(a.getOccurredAt())
                         .build())
                 .toList();
-
         return EquipmentDto.AlarmListResponse.builder()
                 .equipmentId(equipmentId)
                 .items(items)
@@ -180,121 +157,99 @@ public class EquipmentService {
     // ─── 4.4 설비 이벤트 로그 ─────────────────
     @Transactional(readOnly = true)
     public EquipmentDto.EventListResponse getEvents(String equipmentId, int page, int size) {
-
         equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new ReportException(ErrorCode.EQUIPMENT_NOT_FOUND));
-
         List<EquipmentDto.EventItem> allEvents = new ArrayList<>();
-
-        // 알람 이벤트
         for (Alarm a : alarmRepository.findAllAlarmsByEquipmentId(equipmentId)) {
             allEvents.add(EquipmentDto.EventItem.builder()
-                    .eventType("ALARM")
-                    .eventLabel("알람 발생")
+                    .eventType("ALARM").eventLabel("알람 발생")
                     .message(a.getMessage())
                     .severity(a.getSeverity().name())
                     .severityLabel(toSeverityLabel(a.getSeverity().name()))
-                    .occurredAt(a.getOccurredAt())
-                    .build());
+                    .occurredAt(a.getOccurredAt()).build());
         }
-
-        // 상태 변경 이벤트
         for (StatusChangeLog s : statusChangeLogRepository.findByEquipmentId(equipmentId)) {
             allEvents.add(EquipmentDto.EventItem.builder()
-                    .eventType("STATUS_CHANGE")
-                    .eventLabel("상태 변경")
+                    .eventType("STATUS_CHANGE").eventLabel("상태 변경")
                     .message("설비가 " + toStatusLabel(s.getNewStatus()) + " 상태로 변경되었습니다")
-                    .severity("INFO")
-                    .severityLabel("정상")
-                    .occurredAt(s.getChangedAt())
-                    .build());
+                    .severity("INFO").severityLabel("정상")
+                    .occurredAt(s.getChangedAt()).build());
         }
-
-        // PM 이벤트
         for (PmSchedule p : pmScheduleRepository.findByEquipmentId(equipmentId)) {
             allEvents.add(EquipmentDto.EventItem.builder()
-                    .eventType("PM")
-                    .eventLabel("정기 점검")
+                    .eventType("PM").eventLabel("정기 점검")
                     .message("정기 점검 일정이 도래했습니다")
-                    .severity("INFO")
-                    .severityLabel("정상")
-                    .occurredAt(p.getScheduledAt())
-                    .build());
+                    .severity("INFO").severityLabel("정상")
+                    .occurredAt(p.getScheduledAt()).build());
         }
-
-        // 시간 내림차순 정렬
         allEvents.sort(Comparator.comparing(EquipmentDto.EventItem::getOccurredAt).reversed());
-
-        // 페이징
         long total = allEvents.size();
         int totalPages = (int) Math.ceil((double) total / size);
         int fromIdx = Math.min((page - 1) * size, allEvents.size());
         int toIdx = Math.min(fromIdx + size, allEvents.size());
-        List<EquipmentDto.EventItem> pagedItems = allEvents.subList(fromIdx, toIdx);
-
         return EquipmentDto.EventListResponse.builder()
-                .equipmentId(equipmentId)
-                .total(total)
-                .page(page)
-                .size(size)
-                .totalPages(totalPages)
-                .items(pagedItems)
-                .build();
+                .equipmentId(equipmentId).total(total).page(page).size(size)
+                .totalPages(totalPages).items(allEvents.subList(fromIdx, toIdx)).build();
     }
 
     // ─── 4.5 관리자 의견 추가 ─────────────────
     @Transactional
     public EquipmentDto.NoteResponse addNote(String equipmentId, String noteText, String userId) {
-
         equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new ReportException(ErrorCode.EQUIPMENT_NOT_FOUND));
-
-        if (noteText == null || noteText.isBlank()) {
+        if (noteText == null || noteText.isBlank() || noteText.length() > 500)
             throw new ReportException(ErrorCode.BAD_REQUEST);
-        }
-        if (noteText.length() > 500) {
-            throw new ReportException(ErrorCode.BAD_REQUEST);
-        }
-
-        ManagerNote note = ManagerNote.builder()
-                .userId(userId)
-                .equipmentId(equipmentId)
-                .noteText(noteText)
-                .build();
-
-        ManagerNote saved = managerNoteRepository.save(note);
-
-        return EquipmentDto.NoteResponse.builder()
-                .noteId(saved.getNoteId())
-                .userId(saved.getUserId())
-                .equipmentId(saved.getEquipmentId())
-                .noteText(saved.getNoteText())
-                .createdAt(saved.getCreatedAt())
-                .build();
+        ManagerNote saved = managerNoteRepository.save(
+                ManagerNote.builder()
+                        .userId(userId).equipmentId(equipmentId).noteText(noteText)
+                        .build());
+        return toNoteResponse(saved);
     }
 
     // ─── 4.6 관리자 의견 목록 조회 ───────────────
     @Transactional(readOnly = true)
     public EquipmentDto.NoteListResponse getNotes(String equipmentId) {
-
         equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new ReportException(ErrorCode.EQUIPMENT_NOT_FOUND));
-
         List<EquipmentDto.NoteResponse> items = managerNoteRepository
                 .findByEquipmentIdOrderByCreatedAtDesc(equipmentId)
-                .stream()
-                .map(n -> EquipmentDto.NoteResponse.builder()
-                        .noteId(n.getNoteId())
-                        .userId(n.getUserId())
-                        .equipmentId(n.getEquipmentId())
-                        .noteText(n.getNoteText())
-                        .createdAt(n.getCreatedAt())
-                        .build())
-                .toList();
-
+                .stream().map(this::toNoteResponse).toList();
         return EquipmentDto.NoteListResponse.builder()
-                .equipmentId(equipmentId)
-                .items(items)
+                .equipmentId(equipmentId).items(items).build();
+    }
+
+    // ─── 4.7 관리자 의견 수정 ─────────────────
+    @Transactional
+    public EquipmentDto.NoteResponse updateNote(Long noteId, String noteText, String userId) {
+        ManagerNote note = managerNoteRepository.findById(noteId)
+                .orElseThrow(() -> new ReportException(ErrorCode.BAD_REQUEST));
+        if (!note.getUserId().equals(userId))
+            throw new ReportException(ErrorCode.FORBIDDEN);
+        if (noteText == null || noteText.isBlank() || noteText.length() > 500)
+            throw new ReportException(ErrorCode.BAD_REQUEST);
+        note.updateText(noteText);
+        return toNoteResponse(note);
+    }
+
+    // ─── 4.8 관리자 의견 삭제 ─────────────────
+    @Transactional
+    public void deleteNote(Long noteId, String userId) {
+        ManagerNote note = managerNoteRepository.findById(noteId)
+                .orElseThrow(() -> new ReportException(ErrorCode.BAD_REQUEST));
+        if (!note.getUserId().equals(userId))
+            throw new ReportException(ErrorCode.FORBIDDEN);
+        managerNoteRepository.delete(note);
+    }
+
+    // ─── 공통 변환 ────────────────────────────
+    private EquipmentDto.NoteResponse toNoteResponse(ManagerNote n) {
+        return EquipmentDto.NoteResponse.builder()
+                .noteId(n.getNoteId())
+                .userId(n.getUserId())
+                .equipmentId(n.getEquipmentId())
+                .noteText(n.getNoteText())
+                .createdAt(n.getCreatedAt())
+                .updatedAt(n.getUpdatedAt())
                 .build();
     }
 
@@ -308,11 +263,9 @@ public class EquipmentService {
             default -> "IDLE";
         };
     }
-
     private String toStatusLabel(Byte status) {
         return status == null ? "IDLE" : toStatusLabel((int) (byte) status);
     }
-
     private String toOverallStatusLabel(String status) {
         return switch (status) {
             case "CRITICAL" -> "이상";
@@ -320,7 +273,6 @@ public class EquipmentService {
             default         -> "정상";
         };
     }
-
     private String toAlarmStatusLabel(String status) {
         return switch (status) {
             case "NEW"         -> "미확인";
@@ -330,7 +282,6 @@ public class EquipmentService {
             default            -> "미확인";
         };
     }
-
     private String toSeverityLabel(String severity) {
         return switch (severity) {
             case "ERR"  -> "이상";
