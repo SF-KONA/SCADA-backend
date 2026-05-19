@@ -42,6 +42,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/refresh",
+                                "/api/auth/email/send",
+                                "/api/auth/email/verify",
                                 "/api/environment/history",
                                 "/ws/**",
                                 "/ws-native/**",

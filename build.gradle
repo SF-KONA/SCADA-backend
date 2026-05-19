@@ -45,6 +45,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient용
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
+	// 메일 기능
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('test') {
