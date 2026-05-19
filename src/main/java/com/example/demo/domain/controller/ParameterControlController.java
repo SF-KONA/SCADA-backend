@@ -5,6 +5,7 @@ import com.example.demo.domain.dto.SuggestionDto;
 import com.example.demo.domain.service.ParameterControlService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,9 +27,8 @@ public class ParameterControlController {
     public ResponseEntity<ApiResponse<SuggestionDto.ParamUpdateResponse>> updateParameter(
             @PathVariable String equipmentId,
             @PathVariable Long paramId,
-            @RequestBody SuggestionDto.ParamUpdateRequest request) {
-        // TODO: JWT 구현 후 실제 userId 사용
-        String userId = "dev_user";
+            @RequestBody SuggestionDto.ParamUpdateRequest request,
+            @AuthenticationPrincipal String userId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 parameterControlService.updateParameter(
                         equipmentId, paramId,
