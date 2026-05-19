@@ -14,20 +14,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ReportException.class)
     public ResponseEntity<ApiResponse<?>> handleReportException(ReportException e) {
         ErrorCode ec = e.getErrorCode();
+        // ✅ e.getMessage() → ec.getMessage() 로 변경 (ErrorCode 한글 메시지 사용)
         return ResponseEntity.status(ec.getHttpStatus())
-            .body(ApiResponse.fail(ec.getCode(), e.getMessage()));
+                .body(ApiResponse.fail(ec.getCode(), ec.getMessage()));
     }
 
     // @Valid 유효성 검사 실패
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<?>> handleValidation(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
-            .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
-            .findFirst()
-            .orElse(ErrorCode.VALIDATION_ERROR.getMessage());
+                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .findFirst()
+                .orElse(ErrorCode.VALIDATION_ERROR.getMessage());
 
         return ResponseEntity.status(ErrorCode.VALIDATION_ERROR.getHttpStatus())
-            .body(ApiResponse.fail(ErrorCode.VALIDATION_ERROR.getCode(), message));
+                .body(ApiResponse.fail(ErrorCode.VALIDATION_ERROR.getCode(), message));
     }
 
     // 그 외 예외
@@ -35,7 +36,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
         log.error("Unhandled exception: ", e);
         return ResponseEntity.status(ErrorCode.INTERNAL_ERROR.getHttpStatus())
-            .body(ApiResponse.fail(ErrorCode.INTERNAL_ERROR.getCode(),
-                                  ErrorCode.INTERNAL_ERROR.getMessage()));
+                .body(ApiResponse.fail(ErrorCode.INTERNAL_ERROR.getCode(),
+                        ErrorCode.INTERNAL_ERROR.getMessage()));
     }
 }

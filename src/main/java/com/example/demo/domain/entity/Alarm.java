@@ -71,6 +71,7 @@ public class Alarm {
     @Column(name = "last_occurred_at")
     private LocalDateTime lastOccurredAt;  // dedup: 동일 source 재발생 시 갱신
 
+    @Builder.Default
     @Column(name = "occurrence_count", nullable = false)
     private Integer occurrenceCount = 1;  // 알람 반복 발생 횟수
 

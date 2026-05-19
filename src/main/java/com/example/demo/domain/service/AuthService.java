@@ -34,6 +34,7 @@ public class AuthService {
     private final EmailVerificationRepository emailVerificationRepository;
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final EmailService emailService; // ✅ 추가
 
     // refreshToken 임시 저장소 (추후 Redis로 교체 가능)
     private final Map<String, String> refreshTokenStore = new ConcurrentHashMap<>();
@@ -110,11 +111,9 @@ public class AuthService {
     public AuthDto.EmailSendResponse sendEmailCode(String email, String purposeStr) {
         VerificationPurpose purpose = VerificationPurpose.valueOf(purposeStr);
 
-        // 해당 이메일로 가입된 계정 있는지 확인
+
         if (purpose == VerificationPurpose.FIND_ID || purpose == VerificationPurpose.FIND_PW) {
-            userRepository.findAll().stream()
-                    .filter(u -> u.getEmail().equals(email))
-                    .findFirst()
+            userRepository.findByEmail(email)
                     .orElseThrow(() -> new ReportException(ErrorCode.BAD_REQUEST,
                             "해당 이메일로 가입된 계정 없음"));
         }
@@ -132,10 +131,9 @@ public class AuthService {
                 .expiresAt(expiresAt)
                 .build());
 
-        // 테스트용: 콘솔 출력 (추후 실제 이메일 발송으로 교체)
-        log.info("====================================");
-        log.info("[이메일 인증코드] {} / purpose={} / code={}", email, purposeStr, code);
-        log.info("====================================");
+        // ✅ 실제 메일 발송
+        emailService.sendVerificationCode(email, code, purposeStr);
+        log.info("[이메일 인증코드 발송] email={}, purpose={}", email, purposeStr);
 
         return AuthDto.EmailSendResponse.builder()
                 .email(email)
@@ -160,30 +158,27 @@ public class AuthService {
         // 인증 성공 후 코드 삭제
         emailVerificationRepository.deleteByEmailAndPurpose(email, purpose);
 
-        // 해당 이메일의 사용자 조회
-        User user = userRepository.findAll().stream()
-                .filter(u -> u.getEmail().equals(email))
-                .findFirst()
+        // ✅ findAll() 제거 → findByEmail() 사용
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ReportException(ErrorCode.BAD_REQUEST, "사용자 없음"));
 
         if (purpose == VerificationPurpose.FIND_ID) {
             return AuthDto.EmailVerifyResponse.builder()
                     .userId(user.getUserId())
                     .build();
-        } else {
-            // FIND_PW: 임시 비밀번호 발급
-            String tempPassword = generateTempPassword();
-            String resetAt = OffsetDateTime.now(KST).toString();
 
-            // 실제로는 비밀번호 업데이트 필요 (현재는 콘솔 출력)
-            log.info("====================================");
-            log.info("[임시 비밀번호] userId={} / tempPassword={}", user.getUserId(), tempPassword);
-            log.info("====================================");
+        } else {
+            // ✅ 임시 비밀번호 생성 → DB 저장 → 메일 발송
+            String tempPassword = generateTempPassword();
+            user.updatePassword(passwordEncoder.encode(tempPassword));
+
+            emailService.sendTemporaryPassword(email, tempPassword);
+            log.info("[임시 비밀번호 발급] userId={}", user.getUserId());
 
             return AuthDto.EmailVerifyResponse.builder()
                     .userId(user.getUserId())
                     .temporaryPassword(tempPassword)
-                    .resetAt(resetAt)
+                    .resetAt(OffsetDateTime.now(KST).toString())
                     .build();
         }
     }
