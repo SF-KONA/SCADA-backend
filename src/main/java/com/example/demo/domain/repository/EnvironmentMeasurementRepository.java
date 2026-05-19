@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EnvironmentMeasurementRepository extends JpaRepository<EnvironmentMeasurement, Long> {
@@ -22,4 +23,9 @@ public interface EnvironmentMeasurementRepository extends JpaRepository<Environm
     List<EnvironmentMeasurement> findLatestByParamIds(@Param("paramIds") List<Long> paramIds);
 
     List<EnvironmentMeasurement> findTop7ByParamIdOrderByMeasuredAtDesc(Long paramId);
+
+    // EnvironmentDataSimulatorScheduler.fillHistoricalData() idempotent guard 용
+    // (이전 PR push 누락분 복원 — EquipmentMeasurementRepository 동일 패턴)
+    List<EnvironmentMeasurement> findByParamIdAndMeasuredAtAfterOrderByMeasuredAtAsc(
+            Long paramId, LocalDateTime after);
 }
