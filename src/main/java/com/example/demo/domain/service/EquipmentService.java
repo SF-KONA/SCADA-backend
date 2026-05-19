@@ -273,6 +273,31 @@ public class EquipmentService {
                 .build();
     }
 
+    // ─── 4.6 관리자 의견 목록 조회 ───────────────
+    @Transactional(readOnly = true)
+    public EquipmentDto.NoteListResponse getNotes(String equipmentId) {
+
+        equipmentRepository.findById(equipmentId)
+                .orElseThrow(() -> new ReportException(ErrorCode.EQUIPMENT_NOT_FOUND));
+
+        List<EquipmentDto.NoteResponse> items = managerNoteRepository
+                .findByEquipmentIdOrderByCreatedAtDesc(equipmentId)
+                .stream()
+                .map(n -> EquipmentDto.NoteResponse.builder()
+                        .noteId(n.getNoteId())
+                        .userId(n.getUserId())
+                        .equipmentId(n.getEquipmentId())
+                        .noteText(n.getNoteText())
+                        .createdAt(n.getCreatedAt())
+                        .build())
+                .toList();
+
+        return EquipmentDto.NoteListResponse.builder()
+                .equipmentId(equipmentId)
+                .items(items)
+                .build();
+    }
+
     // ─── 라벨 변환 헬퍼 ───────────────────────
     private String toStatusLabel(int status) {
         return switch (status) {

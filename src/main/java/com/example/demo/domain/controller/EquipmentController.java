@@ -5,6 +5,8 @@ import com.example.demo.domain.dto.EquipmentDto;
 import com.example.demo.domain.service.EquipmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -51,9 +53,16 @@ public class EquipmentController {
     public ResponseEntity<ApiResponse<EquipmentDto.NoteResponse>> addNote(
             @PathVariable String equipmentId,
             @RequestBody EquipmentDto.NoteRequest request) {
-        // TODO: JWT 구현 후 실제 userId 사용
-        String userId = "dev_user";
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userId = auth != null ? auth.getName() : "unknown";
         return ResponseEntity.ok(ApiResponse.ok(
                 equipmentService.addNote(equipmentId, request.getNoteText(), userId)));
+    }
+
+    // 4.6 관리자 의견 목록 조회 (추가)
+    @GetMapping("/api/equipments/{equipmentId}/notes")
+    public ResponseEntity<ApiResponse<EquipmentDto.NoteListResponse>> getNotes(
+            @PathVariable String equipmentId) {
+        return ResponseEntity.ok(ApiResponse.ok(equipmentService.getNotes(equipmentId)));
     }
 }
