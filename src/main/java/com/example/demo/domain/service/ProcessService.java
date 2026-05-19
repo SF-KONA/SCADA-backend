@@ -21,6 +21,7 @@ public class ProcessService {
     private final EquipmentRepository equipmentRepository;
     private final AlarmRepository alarmRepository;
     private final PartnerRepository partnerRepository;
+    private final StatusChangeLogRepository statusChangeLogRepository; // 추가
 
     @Transactional(readOnly = true)
     public ProcessDto.ProcessListResponse getProcessList() {
@@ -36,7 +37,15 @@ public class ProcessService {
             if (process.getHasEquipment()) {
                 List<Equipment> equipments = equipmentRepository.findByStepNo(process.getStepNo());
                 int total = equipments.size();
-                int running = total; // TODO: 실제 status 연동 시 교체
+                int running = (int) equipments.stream()
+                        .filter(eq -> {
+                            int currentStatus = statusChangeLogRepository
+                                    .findLatestByEquipmentId(eq.getEquipmentId())
+                                    .map(s -> (int) s.getNewStatus())
+                                    .orElse(0);
+                            return currentStatus == 1; // 1 = 정상(가동 중)
+                        })
+                        .count();
 
                 double utilizationRate = total > 0
                         ? Math.round((double) running / total * 1000.0) / 10.0
