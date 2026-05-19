@@ -52,6 +52,9 @@ public class AlarmDto {
         private int size;
         private int totalPages;
         private List<ListItem> items;
+        private long totalErr;
+        private long totalWarn;
+        private long totalInfo;
     }
 
     // ─────────────────────────────────────────────

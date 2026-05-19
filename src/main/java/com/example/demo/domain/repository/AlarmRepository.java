@@ -88,4 +88,5 @@ public interface AlarmRepository extends JpaRepository<Alarm, Long> {
             ORDER BY a.occurredAt DESC
             """)
     List<Alarm> findEmergencyAlarms();
+    long countBySeverity(AlarmSeverity severity);
 }
