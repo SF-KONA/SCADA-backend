@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "ai_suggestions")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -62,4 +63,7 @@ public class AiSuggestion {
 
     @Column(name = "predicted_performance")
     private Double predictedPerformance;  // 성능률 변화량 %p
+
+    @Column(name = "contribution_score")
+    private Double contributionScore;  // 정규화된 이탈 기여도 (0~1). 추후 SHAP 등으로 교체 예정
 }
