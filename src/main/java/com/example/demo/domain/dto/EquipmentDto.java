@@ -8,7 +8,6 @@ import java.util.List;
 
 public class EquipmentDto {
 
-    // ─── 4.1 공정별 설비 목록 ──────────────────
     @Getter @Builder
     public static class EquipmentListResponse {
         private String stepNo;
@@ -26,7 +25,6 @@ public class EquipmentDto {
         private Integer totalRunningHours;
     }
 
-    // ─── 4.2 설비 파라미터·측정값 ──────────────
     @Getter @Builder
     public static class ParameterListResponse {
         private String equipmentId;
@@ -58,7 +56,6 @@ public class EquipmentDto {
         private LocalDateTime measuredAt;
     }
 
-    // ─── 4.3 설비 알람 ────────────────────────
     @Getter @Builder
     public static class AlarmListResponse {
         private String equipmentId;
@@ -78,7 +75,6 @@ public class EquipmentDto {
         private LocalDateTime occurredAt;
     }
 
-    // ─── 4.4 설비 이벤트 로그 ─────────────────
     @Getter @Builder
     public static class EventListResponse {
         private String equipmentId;
@@ -99,9 +95,14 @@ public class EquipmentDto {
         private LocalDateTime occurredAt;
     }
 
-    // ─── 4.5 관리자 의견 추가 ─────────────────
     @Getter
     public static class NoteRequest {
+        private String noteText;
+    }
+
+    // 수정 요청 DTO 추가
+    @Getter
+    public static class NoteUpdateRequest {
         private String noteText;
     }
 
@@ -112,9 +113,9 @@ public class EquipmentDto {
         private String equipmentId;
         private String noteText;
         private LocalDateTime createdAt;
+        private LocalDateTime updatedAt; // 추가
     }
 
-    // ─── 4.6 관리자 의견 목록 조회 (추가) ────────
     @Getter @Builder
     public static class NoteListResponse {
         private String equipmentId;
