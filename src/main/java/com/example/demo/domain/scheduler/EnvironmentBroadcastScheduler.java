@@ -13,6 +13,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,7 +32,6 @@ public class EnvironmentBroadcastScheduler {
     private static final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssxxx");
 
-    // 5초마다 최신 환경 측정값 broadcast
     @Scheduled(fixedDelay = 5000)
     public void broadcastEnvironmentData() {
         List<EnvironmentParameter> params =
@@ -40,8 +40,10 @@ public class EnvironmentBroadcastScheduler {
         if (params.isEmpty()) return;
 
         List<Long> paramIds = params.stream().map(EnvironmentParameter::getParamId).toList();
+
+        // ★ 현재 시각 이전 데이터만 조회
         List<EnvironmentMeasurement> latestMeasurements =
-                measurementRepository.findLatestByParamIds(paramIds);
+                measurementRepository.findLatestByParamIdsBeforeNow(paramIds, LocalDateTime.now());
 
         Map<Long, EnvironmentMeasurement> measurementMap = new HashMap<>();
         for (EnvironmentMeasurement m : latestMeasurements) {

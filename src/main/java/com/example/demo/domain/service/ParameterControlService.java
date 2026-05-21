@@ -42,7 +42,7 @@ public class ParameterControlService {
         List<SuggestionDto.ControllableItem> items = parameterRepo.findByEquipmentId(equipmentId).stream()
                 .filter(p -> Boolean.TRUE.equals(p.getIsControllable()))
                 .map(p -> {
-                    Double currentValue = measurementRepo.findLatestByParamId(p.getParamId())
+                    Double currentValue = measurementRepo.findLatestByParamIdBeforeNow(p.getParamId(), LocalDateTime.now())
                             .map(EquipmentMeasurement::getMeasuredValue)
                             .orElse(null);
                     return SuggestionDto.ControllableItem.builder()
@@ -93,7 +93,7 @@ public class ParameterControlService {
             throw new ReportException(ErrorCode.NOT_CONTROLLABLE);
         }
 
-        Double beforeValue = measurementRepo.findLatestByParamId(paramId)
+        Double beforeValue = measurementRepo.findLatestByParamIdBeforeNow(paramId, LocalDateTime.now())
                 .map(EquipmentMeasurement::getMeasuredValue)
                 .orElse(null);
 

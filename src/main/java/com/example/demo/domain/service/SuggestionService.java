@@ -196,10 +196,11 @@ public class SuggestionService {
                 .toList();
         if (controllable.isEmpty()) return 0;
 
+        LocalDateTime now = LocalDateTime.now();
         List<OptimizationEngine.ParameterSnapshot> snapshots = controllable.stream()
                 .map(p -> new OptimizationEngine.ParameterSnapshot(
                         p,
-                        measurementRepo.findLatestByParamId(p.getParamId())
+                        measurementRepo.findLatestByParamIdBeforeNow(p.getParamId(), now)
                                 .map(EquipmentMeasurement::getMeasuredValue)
                                 .orElse(null)))
                 .toList();
@@ -218,7 +219,6 @@ public class SuggestionService {
                 optimizationEngine.propose(equipmentId, snapshots, currentOee);
 
         // 4) 필터 + 영속화
-        LocalDateTime now = LocalDateTime.now();
         LocalDateTime validUntil = now.plusMinutes(SUGGESTION_VALID_MINUTES);
         int created = 0;
 

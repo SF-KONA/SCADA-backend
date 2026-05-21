@@ -77,11 +77,18 @@ public class EquipmentService {
         List<EquipmentDto.ParameterItem> paramItems = new ArrayList<>();
         for (EquipmentParameter param : params) {
             EquipmentMeasurement latest = equipmentMeasurementRepository
-                    .findLatestByParamId(param.getParamId()).orElse(null);
+                    .findLatestByParamIdBeforeNow(param.getParamId(), LocalDateTime.now()).orElse(null);
             Double latestValue = latest != null ? latest.getMeasuredValue() : null;
             LocalDateTime latestAt = latest != null ? latest.getMeasuredAt() : null;
             String paramStatus = "NORMAL";
-            if (latestValue != null && param.getNormalMin() != null && param.getNormalMax() != null) {
+// OEE 카테고리(누적 카운트)는 상태 판단 제외
+            boolean isOeeParam = param.getParamCategory() != null
+                    && param.getParamCategory().name().equals("OEE");
+            boolean isStatusParam = param.getParamCategory() != null
+                    && param.getParamCategory().name().equals("STATUS");
+
+            if (!isOeeParam && !isStatusParam && latestValue != null
+                    && param.getNormalMin() != null && param.getNormalMax() != null) {
                 double range = param.getNormalMax() - param.getNormalMin();
                 if (latestValue < param.getNormalMin() || latestValue > param.getNormalMax()) {
                     paramStatus = "CRITICAL";
@@ -95,6 +102,7 @@ public class EquipmentService {
             List<EquipmentDto.MeasurementItem> history = equipmentMeasurementRepository
                     .findByParamIdAndMeasuredAtAfterOrderByMeasuredAtAsc(param.getParamId(), from)
                     .stream()
+                    .filter(m -> !m.getMeasuredAt().isAfter(LocalDateTime.now()))
                     .map(m -> EquipmentDto.MeasurementItem.builder()
                             .value(m.getMeasuredValue())
                             .measuredAt(m.getMeasuredAt())
@@ -130,8 +138,8 @@ public class EquipmentService {
         equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new ReportException(ErrorCode.EQUIPMENT_NOT_FOUND));
         List<Alarm> alarms = "all".equals(status)
-                ? alarmRepository.findAllAlarmsByEquipmentId(equipmentId)
-                : alarmRepository.findActiveAlarmsByEquipmentId(equipmentId);
+                ? alarmRepository.findAllAlarmsByEquipmentId(equipmentId, LocalDateTime.now())
+                : alarmRepository.findActiveAlarmsByEquipmentId(equipmentId, LocalDateTime.now());
         List<EquipmentParameter> params = equipmentParameterRepository.findByEquipmentId(equipmentId);
         Map<Long, String> paramTagMap = params.stream()
                 .collect(Collectors.toMap(EquipmentParameter::getParamId, EquipmentParameter::getTagName));
@@ -160,7 +168,7 @@ public class EquipmentService {
         equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new ReportException(ErrorCode.EQUIPMENT_NOT_FOUND));
         List<EquipmentDto.EventItem> allEvents = new ArrayList<>();
-        for (Alarm a : alarmRepository.findAllAlarmsByEquipmentId(equipmentId)) {
+        for (Alarm a : alarmRepository.findAllAlarmsByEquipmentId(equipmentId, LocalDateTime.now())) {
             allEvents.add(EquipmentDto.EventItem.builder()
                     .eventType("ALARM").eventLabel("알람 발생")
                     .message(a.getMessage())
@@ -168,14 +176,16 @@ public class EquipmentService {
                     .severityLabel(toSeverityLabel(a.getSeverity().name()))
                     .occurredAt(a.getOccurredAt()).build());
         }
-        for (StatusChangeLog s : statusChangeLogRepository.findByEquipmentId(equipmentId)) {
+        for (StatusChangeLog s : statusChangeLogRepository.findByEquipmentId(equipmentId)
+                .stream().filter(s2 -> !s2.getChangedAt().isAfter(LocalDateTime.now())).toList()) {
             allEvents.add(EquipmentDto.EventItem.builder()
                     .eventType("STATUS_CHANGE").eventLabel("상태 변경")
                     .message("설비가 " + toStatusLabel(s.getNewStatus()) + " 상태로 변경되었습니다")
                     .severity("INFO").severityLabel("정상")
                     .occurredAt(s.getChangedAt()).build());
         }
-        for (PmSchedule p : pmScheduleRepository.findByEquipmentId(equipmentId)) {
+        for (PmSchedule p : pmScheduleRepository.findByEquipmentId(equipmentId)
+                .stream().filter(p2 -> !p2.getScheduledAt().isAfter(LocalDateTime.now())).toList()) {
             allEvents.add(EquipmentDto.EventItem.builder()
                     .eventType("PM").eventLabel("정기 점검")
                     .message("정기 점검 일정이 도래했습니다")

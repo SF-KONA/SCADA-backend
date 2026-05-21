@@ -200,7 +200,7 @@ public class DashboardService {
             Double oee = latestOee.map(m -> m.getOee() != null ? round2(m.getOee() * 100) : null).orElse(null);
 
             DashboardDto.AlarmSummary lastAlarm = null;
-            List<Alarm> activeAlarms = alarmRepository.findActiveAlarmsByEquipmentId(eq.getEquipmentId());
+            List<Alarm> activeAlarms = alarmRepository.findActiveAlarmsByEquipmentId(eq.getEquipmentId(), LocalDateTime.now());
             if (!activeAlarms.isEmpty()) {
                 Alarm a = activeAlarms.get(0);
                 lastAlarm = DashboardDto.AlarmSummary.builder()
@@ -247,7 +247,7 @@ public class DashboardService {
     private int countWarningEquipments(List<Equipment> equipments) {
         int count = 0;
         for (Equipment eq : equipments) {
-            List<Alarm> active = alarmRepository.findActiveAlarmsByEquipmentId(eq.getEquipmentId());
+            List<Alarm> active = alarmRepository.findActiveAlarmsByEquipmentId(eq.getEquipmentId(), LocalDateTime.now());
             boolean hasWarn = active.stream().anyMatch(a ->
                     a.getSeverity().name().equals("WARN") && a.getStatus() != AlarmStatus.DONE);
             if (hasWarn) count++;

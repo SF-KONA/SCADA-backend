@@ -52,7 +52,7 @@ public class ProcessService {
                         : 0.0;
 
                 for (Equipment eq : equipments) {
-                    List<Alarm> activeAlarms = alarmRepository.findActiveAlarmsByEquipmentId(eq.getEquipmentId());
+                    List<Alarm> activeAlarms = alarmRepository.findActiveAlarmsByEquipmentId(eq.getEquipmentId(), LocalDateTime.now());
                     for (Alarm alarm : activeAlarms) {
                         alerts.add(ProcessDto.AlertItem.builder()
                                 .alarmId(alarm.getAlarmId())

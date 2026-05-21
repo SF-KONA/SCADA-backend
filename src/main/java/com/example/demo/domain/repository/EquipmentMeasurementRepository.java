@@ -14,4 +14,8 @@ public interface EquipmentMeasurementRepository extends JpaRepository<EquipmentM
 
     @Query("SELECT m FROM EquipmentMeasurement m WHERE m.paramId = :paramId ORDER BY m.measuredAt DESC LIMIT 1")
     java.util.Optional<EquipmentMeasurement> findLatestByParamId(@Param("paramId") Long paramId);
+
+    // ★ 추가 — 현재 시각 이전 데이터 중 가장 최근값
+    @Query("SELECT m FROM EquipmentMeasurement m WHERE m.paramId = :paramId AND m.measuredAt <= :now ORDER BY m.measuredAt DESC LIMIT 1")
+    java.util.Optional<EquipmentMeasurement> findLatestByParamIdBeforeNow(@Param("paramId") Long paramId, @Param("now") LocalDateTime now);
 }
